@@ -12,7 +12,8 @@ const View = async ({ id }: { id: string }) => {
 
 after( async() => await writeClient
     .patch(id)
-    .set( {views: totalViews + 1} )
+    .setIfMissing({ views: 0 })
+    .inc({ views: 1 })
     .commit()
 )
 
@@ -22,7 +23,7 @@ after( async() => await writeClient
         <Ping />
       </div>
       <p className="view-text">
-        <span className="font-black">{totalViews} Views</span>
+        <span className="font-black">{totalViews ?? 0} Views</span>
       </p>
     </div>
   );
