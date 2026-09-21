@@ -1,6 +1,6 @@
 import React from 'react'
 import { formatDate } from '@/lib/utils'
-import {EyeIcon} from 'lucide-react'
+import {EyeIcon, ThumbsUp} from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from './ui/button'
@@ -8,9 +8,9 @@ import { Author, Startup } from '@/sanity/types'
 import { Skeleton } from './ui/skeleton'
 import { cn } from '@/lib/utils'
 
-export type StartupCardType = Omit<Startup, 'author'> & { author: Author}
+export type StartupCardType = Omit<Startup, 'author'> & { author: Author, votes?: number}
 const StartupCard = ({post}: {post : StartupCardType}) => {
-  const {_createdAt, views, author, category, image, title, description, _id} = post
+  const {_createdAt, views, votes, author, category, image, title, description, _id} = post
 
   const formattedDate = formatDate(_createdAt.toString()); // Conversion en chaîne
 
@@ -22,9 +22,17 @@ const StartupCard = ({post}: {post : StartupCardType}) => {
             {formattedDate}
             
         </p>
+        <div className='flex gap-3'>
+      {typeof votes === 'number' && (
         <div className='flex gap-1.5'>
-      <EyeIcon className='size-6 text-primary'/>
-      <span className='text-16-medium'>{views}</span>
+          <ThumbsUp className='size-6 text-primary'/>
+          <span className='text-16-medium'>{votes}</span>
+        </div>
+      )}
+      <div className='flex gap-1.5'>
+        <EyeIcon className='size-6 text-primary'/>
+        <span className='text-16-medium'>{views}</span>
+      </div>
     </div>
     </div>
 <div className='flex-between mt-5 ap-5'>

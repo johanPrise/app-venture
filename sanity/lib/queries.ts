@@ -1,7 +1,7 @@
 import { defineQuery } from "next-sanity";
 
 export const STARTUPS_QUERY =
-  defineQuery(`*[_type == 'startup' && defined(slug.current) && (!defined($search) || category match $search || title match $search || author->name match $search)] | order(_createdAt desc) {
+  defineQuery(`*[_type == 'startup' && defined(slug.current) && (!defined($search) || category match $search || title match $search || author->name match $search)] {
     _id,
     title,
     slug,
@@ -10,10 +10,11 @@ export const STARTUPS_QUERY =
       _id, name, slug, image, bio
     },
     views,
+    "votes": count(*[_type == 'vote' && startup._ref == ^._id]),
     description,
     category,
     image
-  }`);
+  } | order(select($sort == 'votes' => votes, 0) desc, _createdAt desc)`);
 
 export const STARTUP_BY_ID_QUERY =
   defineQuery(`*[_type == 'startup' && _id == $id][0]{
@@ -25,6 +26,7 @@ export const STARTUP_BY_ID_QUERY =
       _id, name, username, slug, image, bio
     },
     views,
+    "votes": count(*[_type == 'vote' && startup._ref == ^._id]),
     description,
     category,
     image,
@@ -38,6 +40,12 @@ export const STARTUP_VIEWS_QUERY = defineQuery(`
 export const STARTUP_AUTHOR_QUERY = defineQuery(`
   *[_type == "startup" && _id == $id][0]{
   _id, "authorId": author._ref}`);
+
+export const HAS_VOTED_QUERY = defineQuery(`
+  count(*[_type == "vote" && startup._ref == $startupId && author._ref == $authorId]) > 0`);
+
+export const STARTUP_VOTES_QUERY = defineQuery(`
+  count(*[_type == "vote" && startup._ref == $startupId])`);
 
 export const AUTHOR_BY_GITHUB_ID = defineQuery(`
   *[_type == "author" && id == $id][0] {
