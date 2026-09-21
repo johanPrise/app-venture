@@ -4,6 +4,7 @@ import { auth } from "@/auth"
 import { parseServerActionResponse } from "./utils";
 import  slugify  from 'slugify';
 import { writeClient } from "@/sanity/lib/write-client";
+import { formSchema } from "./validation";
 export const createPitch = async (state: { error?: string; status: string }, form: FormData, pitch: string) => {
     const session = await auth();
     if(!session){
@@ -13,16 +14,27 @@ export const createPitch = async (state: { error?: string; status: string }, for
         });
     }
         const {title, description, category, link} = Object.fromEntries(Array.from(form).filter(([key]) => key != 'pitch'));
-        const slug = slugify(title as string, {lower: true ,strict: true});
+        const validation = await formSchema.safeParseAsync({title, description, category, link, pitch});
+        if(!validation.success){
+            const fieldErrors = validation.error.flatten().fieldErrors;
+            const error = Object.entries(fieldErrors)
+                .map(([field, messages]) => `${field}: ${messages?.[0]}`)
+                .join('; ');
+            return parseServerActionResponse({
+                error: `Validation failed - ${error}`,
+                status: "ERROR"
+            });
+        }
+        const slug = slugify(validation.data.title, {lower: true ,strict: true});
         try{
             const startup = {
-                title,
-                description,
-                category,
-                image:link,
-                pitch,
+                title: validation.data.title,
+                description: validation.data.description,
+                category: validation.data.category,
+                image: validation.data.link,
+                pitch: validation.data.pitch,
                 slug:{
-                    _type: slug,
+                    _type: "slug",
                     current: slug,
                 },
                 author: {
@@ -38,5 +50,9 @@ export const createPitch = async (state: { error?: string; status: string }, for
             })
         } catch(error) {
             console.log(error)
+            return parseServerActionResponse({
+                error: error instanceof Error ? error.message : String(error),
+                status: "ERROR"
+            })
         }
     }
