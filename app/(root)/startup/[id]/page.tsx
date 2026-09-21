@@ -8,6 +8,7 @@ import Image from "next/image";
 import markdownit from "markdown-it";
 import { Skeleton } from "@/components/ui/skeleton";
 import View from "@/components/View";
+import ViewTracker from "@/components/ViewTracker";
 import StartupCard, { StartupCardType } from "@/components/StartupCard";
 
 
@@ -92,6 +93,7 @@ const Page = async ({ params }: { params: Promise<{ id: string }> }) => {
         <Suspense fallback={<Skeleton className="view_skeleton" />}>
           <View id={id} />
         </Suspense>
+        <ViewTracker id={id} />
       </section>
     </>
   );
