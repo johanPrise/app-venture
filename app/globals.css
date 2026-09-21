@@ -248,6 +248,32 @@
         @apply font-medium text-[16px] bg-primary-100 px-4 py-2 rounded-full;
     }
 
+    /* vote */
+    .vote-btn {
+        @apply flex items-center gap-2 border-[3px] border-black bg-white rounded-full px-4 py-2 font-work-sans font-bold text-[16px] transition-all hover:bg-primary-100 disabled:opacity-60;
+    }
+
+    .vote-btn_active {
+        @apply bg-primary text-white hover:bg-primary;
+    }
+
+    .vote-btn_count {
+        @apply bg-black text-white rounded-full px-2.5 py-0.5 text-[14px];
+    }
+
+    /* sort */
+    .sort-tabs {
+        @apply flex flex-wrap gap-3 mt-5;
+    }
+
+    .sort-tab {
+        @apply border-[3px] border-black rounded-full px-4 py-1.5 font-work-sans font-semibold text-[16px] bg-white hover:bg-primary-100 transition-all;
+    }
+
+    .sort-tab_active {
+        @apply bg-black text-white hover:bg-black;
+    }
+
     .pattern {
         background-image: linear-gradient(
                 to right,

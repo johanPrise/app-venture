@@ -1,5 +1,5 @@
 import React, { Suspense } from "react";
-import { STARTUP_BY_ID_QUERY, PLAYLIST_BY_SLUG_QUERY } from "@/sanity/lib/queries";
+import { STARTUP_BY_ID_QUERY, PLAYLIST_BY_SLUG_QUERY, HAS_VOTED_QUERY } from "@/sanity/lib/queries";
 import { notFound } from "next/navigation";
 import { client } from "@/sanity/lib/client";
 import { formatDate } from "@/lib/utils";
@@ -9,16 +9,23 @@ import markdownit from "markdown-it";
 import { Skeleton } from "@/components/ui/skeleton";
 import View from "@/components/View";
 import ViewTracker from "@/components/ViewTracker";
+import VoteButton from "@/components/VoteButton";
+import { auth } from "@/auth";
 import StartupCard, { StartupCardType } from "@/components/StartupCard";
 
 
 const Page = async ({ params }: { params: Promise<{ id: string }> }) => {
   const id = (await params).id;
+  const session = await auth();
   
   // Fetch data and handle potential null responses
-  const [post, editorPicksResponse] = await Promise.all([
-    client.fetch(STARTUP_BY_ID_QUERY, { id }),
-    client.fetch(PLAYLIST_BY_SLUG_QUERY, { slug: 'editor-picks-new' })
+  // Votes are read without the CDN so the count matches the user's vote state
+  const [post, editorPicksResponse, hasVoted] = await Promise.all([
+    client.withConfig({ useCdn: false }).fetch(STARTUP_BY_ID_QUERY, { id }),
+    client.fetch(PLAYLIST_BY_SLUG_QUERY, { slug: 'editor-picks-new' }),
+    session?.id
+      ? client.withConfig({ useCdn: false }).fetch(HAS_VOTED_QUERY, { startupId: id, authorId: session.id })
+      : false,
   ]);
   
   // Safely extract editorPosts, defaulting to an empty array if response is null or doesn't have select
@@ -65,7 +72,15 @@ const Page = async ({ params }: { params: Promise<{ id: string }> }) => {
                 </p>
               </div>
             </Link>
-            <p className="category-tag">{post.category}</p>
+            <div className="flex items-center gap-3">
+              <p className="category-tag">{post.category}</p>
+              <VoteButton
+                startupId={id}
+                initialVotes={post.votes ?? 0}
+                initialHasVoted={Boolean(hasVoted)}
+                isLoggedIn={Boolean(session?.id)}
+              />
+            </div>
           </div>
           <h3 className="text-30-bold">Pitch Details</h3>
           {parsedContent ? (
