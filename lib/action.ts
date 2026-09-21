@@ -1,15 +1,17 @@
 "use server"
 
-import { auth } from "@/auth"
+import { auth, signIn } from "@/auth"
 import { parseServerActionResponse } from "./utils";
 import  slugify  from 'slugify';
 import { writeClient } from "@/sanity/lib/write-client";
 import { formSchema } from "./validation";
 import { cookies, headers } from "next/headers";
 import { client } from "@/sanity/lib/client";
-import { STARTUP_AUTHOR_QUERY } from "@/sanity/lib/queries";
+import { HAS_VOTED_QUERY, STARTUP_AUTHOR_QUERY, STARTUP_VOTES_QUERY } from "@/sanity/lib/queries";
 
 const VIEW_COOKIE_MAX_AGE = 60 * 60 * 24; // 24h
+// Sanity ids used to build the vote id: no dots, since ids containing "." are private
+const DOCUMENT_ID = /^[A-Za-z0-9_-]{1,60}$/;
 const BOT_USER_AGENT = /bot|crawl|spider|slurp|facebookexternalhit|embedly|preview|headless|lighthouse|curl|wget|python-requests/i;
 export const createPitch = async (state: { error?: string; status: string }, form: FormData, pitch: string) => {
     const session = await auth();
@@ -94,4 +96,75 @@ export const incrementView = async (startupId: string) => {
         path: '/',
         maxAge: VIEW_COOKIE_MAX_AGE,
     });
+}
+
+export const toggleVote = async (startupId: string) => {
+    const session = await auth();
+    if(!session?.id){
+        return parseServerActionResponse({
+            error: "Unauthorized",
+            status: "ERROR"
+        });
+    }
+    if(typeof startupId !== 'string' || !DOCUMENT_ID.test(startupId) || !DOCUMENT_ID.test(session.id)){
+        return parseServerActionResponse({
+            error: "Invalid startup",
+            status: "ERROR"
+        });
+    }
+
+    try{
+        const startup = await client
+            .withConfig({ useCdn: false })
+            .fetch(STARTUP_AUTHOR_QUERY, { id: startupId });
+        if(!startup){
+            return parseServerActionResponse({
+                error: "Startup not found",
+                status: "ERROR"
+            });
+        }
+
+        // Deterministic id: one vote document per (startup, author) pair at most
+        const voteId = `vote-${startupId}-${session.id}`;
+        const existingVote = await writeClient.getDocument(voteId);
+        if(existingVote){
+            await writeClient.delete(voteId);
+        } else {
+            await writeClient.createIfNotExists({
+                _id: voteId,
+                _type: 'vote',
+                author: {
+                    _type: 'reference',
+                    _ref: session.id,
+                },
+                startup: {
+                    _type: 'reference',
+                    _ref: startupId,
+                },
+            });
+        }
+
+        const params = { startupId, authorId: session.id };
+        const [votes, hasVoted] = await Promise.all([
+            writeClient.fetch(STARTUP_VOTES_QUERY, params),
+            writeClient.fetch(HAS_VOTED_QUERY, params),
+        ]);
+
+        return parseServerActionResponse({
+            votes,
+            hasVoted,
+            status: 'SUCCESS'
+        })
+    } catch(error) {
+        console.log(error)
+        return parseServerActionResponse({
+            error: error instanceof Error ? error.message : String(error),
+            status: "ERROR"
+        })
+    }
+}
+
+export const signInToVote = async (startupId: string) => {
+    const redirectTo = typeof startupId === 'string' && DOCUMENT_ID.test(startupId) ? `/startup/${startupId}` : '/';
+    await signIn('github', { redirectTo });
 }
