@@ -11,7 +11,7 @@ import View from "@/components/View";
 import StartupCard, { StartupCardType } from "@/components/StartupCard";
 
 
-const Page = async ({ params }: { params: { id: string } }) => {
+const Page = async ({ params }: { params: Promise<{ id: string }> }) => {
   const id = (await params).id;
   
   // Fetch data and handle potential null responses
