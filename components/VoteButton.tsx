@@ -43,7 +43,7 @@ const VoteButton = ({ startupId, initialVotes, initialHasVoted, isLoggedIn }: {
     };
 
     const { votes, hasVoted } = optimisticVote;
-    const label = !isLoggedIn ? 'Connectez-vous pour voter' : hasVoted ? 'Voté' : 'Voter';
+    const label = !isLoggedIn ? 'Log in to vote' : hasVoted ? 'Voted' : 'Vote';
 
     return (
         <button
@@ -51,7 +51,7 @@ const VoteButton = ({ startupId, initialVotes, initialHasVoted, isLoggedIn }: {
             onClick={handleClick}
             disabled={isPending}
             aria-pressed={isLoggedIn ? hasVoted : undefined}
-            title={!isLoggedIn ? 'Connectez-vous pour voter' : hasVoted ? 'Retirer mon vote' : 'Voter pour ce pitch'}
+            title={!isLoggedIn ? 'Log in to vote' : hasVoted ? 'Remove my vote' : 'Vote for this pitch'}
             className={cn('vote-btn', hasVoted && 'vote-btn_active')}
         >
             <ThumbsUp className={cn('size-5', hasVoted && 'fill-current')} />
