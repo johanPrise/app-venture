@@ -36,8 +36,14 @@ const StartupForm = () => {
                     description:'Your startup pitch has been created successfully ',
                     variant:'default'
                 })
+                router.push(`/startup/${result._id}`)
+            } else {
+                toast({
+                    title:'Error',
+                    description: result.error || 'An unexpected error has occured',
+                    variant:'destructive'
+                })
             }
-            router.push(`/startup/${result._id}`)
             return result
         } catch(error) {
             if(error instanceof z.ZodError){
