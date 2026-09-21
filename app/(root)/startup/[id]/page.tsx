@@ -11,7 +11,6 @@ import View from "@/components/View";
 import StartupCard, { StartupCardType } from "@/components/StartupCard";
 
 
-export const experimental_ppr = true;
 const Page = async ({ params }: { params: { id: string } }) => {
   const id = (await params).id;
   
